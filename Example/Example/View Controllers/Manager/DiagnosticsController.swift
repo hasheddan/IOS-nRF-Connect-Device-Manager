@@ -85,6 +85,7 @@ final class DiagnosticsController: UITableViewController {
     // MARK: Private Properties
     
     private var statsManager: StatsManager!
+    private var osManager: DefaultManager!
     
     // MARK: UIViewController
     
@@ -95,6 +96,9 @@ final class DiagnosticsController: UITableViewController {
         let transport: McuMgrTransport! = baseController.transport
         statsManager = StatsManager(transport: transport)
         statsManager.logDelegate = UIApplication.shared.delegate as? McuMgrLogDelegate
+        
+        osManager = DefaultManager(transport: transport)
+        osManager.logDelegate = UIApplication.shared.delegate as? McuMgrLogDelegate
     }
     
     // MARK: UITableView
@@ -311,16 +315,21 @@ private extension DiagnosticsController {
     func requestStats() {
         Task { @MainActor in
             do {
-                let response = try await statsManager.list()
                 statsLabel.text = ""
                 statsLabel.textColor = .primary
+                var output: String = ""
                 
+                let mempoolResponse = try? await osManager.memoryPoolStats()
+                if let mpoolString = memoryPoolResponseString(mempoolResponse) {
+                    output += mpoolString
+                }
+                
+                let response = try await statsManager.list()
                 guard let modules = response.names, !modules.isEmpty else {
                     statsLabel.text = "No stats found"
                     return
                 }
                 
-                var output: String = ""
                 for module in modules {
                     do {
                         let moduleStats = try await statsManager.read(module: module)
@@ -338,6 +347,32 @@ private extension DiagnosticsController {
                 tableView.reloadSections(IndexSet([Section.stats.rawValue]), with: .none)
             }
         }
+    }
+    
+    // MARK: memoryPoolResponseString(_:)
+    
+    func memoryPoolResponseString(_ mempoolResponse: McuMgrMemoryPoolStatsResponse?) -> String? {
+        guard let mpools = mempoolResponse?.mpools else { return nil }
+        var output = ""
+        for key in mpools.keys.sorted(by: <) {
+            if let mpool = mpools[key] {
+                output += "Memory Pool \(key):\n"
+                if let blockSize = mpool.blockSize {
+                    output += "• Block Size: \(blockSize)\n"
+                }
+                if let numBlocks = mpool.numBlocks {
+                    output += "• Number of Blocks: \(numBlocks)\n"
+                }
+                if let numFree = mpool.numFree {
+                    output += "• Number of Free Blocks: \(numFree)\n"
+                }
+                if let minFree = mpool.minFree {
+                    output += "• Minimum Number of Free Blocks: \(minFree)\n"
+                }
+                output += "\n"
+            }
+        }
+        return output
     }
     
     // MARK: moduleStatsString(_:stats:error:)
