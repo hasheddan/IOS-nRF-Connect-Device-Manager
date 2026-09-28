@@ -92,4 +92,21 @@ public extension DefaultManager {
             }
         }
     }
+    
+    // MARK: memoryPoolStats()
+    
+    /// Async variant of ``memoryPoolStats(callback:)``
+    public func memoryPoolStats() async throws -> McuMgrMemoryPoolStatsResponse {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<McuMgrMemoryPoolStatsResponse, Error>) in
+            memoryPoolStats() { response, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let response {
+                    continuation.resume(returning: response)
+                } else {
+                    continuation.resume(throwing: McuMgrResponseParseError.invalidPayload)
+                }
+            }
+        }
+    }
 }

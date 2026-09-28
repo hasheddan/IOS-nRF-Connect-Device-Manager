@@ -352,7 +352,7 @@ public class McuMgrExecResponse: McuMgrResponse {
 public class McuMgrMemoryPoolStatsResponse: McuMgrResponse {
     
     /// A map of task names to task statistics.
-    public var mpools: [String:MemoryPoolStatistics]?
+    public var mpools: [String: MemoryPoolStatistics]?
     
     public required init(cbor: CBOR?) throws {
         try super.init(cbor: cbor)
