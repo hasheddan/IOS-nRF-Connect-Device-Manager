@@ -353,7 +353,7 @@ public class FileSystemManager: McuManager {
         if transferState == .none {
             log(msg: "Transfer is not in progress", atLevel: .warning)
         } else {
-            if let error = error {
+            if let error {
                 log(msg: "Transfer cancelled due to error: \(error)", atLevel: .error)
                 resetTransfer()
                 uploadDelegate?.uploadDidFail(with: error)
@@ -470,11 +470,7 @@ public class FileSystemManager: McuManager {
         
         // Check for an error return code.
         if let error = response.getError() {
-            guard let groupError = response.groupRC?.groupError() as? FileSystemManagerError else {
-                self.cancelTransfer(error: error)
-                return
-            }
-            self.cancelTransfer(error: groupError)
+            self.cancelTransfer(error: error)
             return
         }
         
@@ -547,17 +543,13 @@ public class FileSystemManager: McuManager {
             return
         }
         // Make sure the response is not nil.
-        guard let response = response else {
+        guard let response else {
             self.cancelTransfer(error: FileTransferError.invalidPayload)
             return
         }
         // Check for an error return code.
         if let error = response.getError() {
-            guard let groupError = response.groupRC?.groupError() as? FileSystemManagerError else {
-                self.cancelTransfer(error: error)
-                return
-            }
-            self.cancelTransfer(error: groupError)
+            self.cancelTransfer(error: error)
             return
         }
         // Get the offset from the response.

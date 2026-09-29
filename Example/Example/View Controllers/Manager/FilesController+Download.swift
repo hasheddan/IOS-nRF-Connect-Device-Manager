@@ -68,6 +68,7 @@ extension FilesController {
             if downloadProgress.superview != nil {
                 downloadProgress.removeFromSuperview()
             }
+            downloadResultLabel.numberOfLines = 1
             if downloadResultLabel.superview != nil {
                 downloadResultLabel.removeFromSuperview()
             }
@@ -99,6 +100,7 @@ extension FilesController {
                 downloadProgress.setProgress(0.0, animated: false)
             case .error(let error):
                 downloadResultLabel.text = "Error: \(error.localizedDescription)"
+                downloadResultLabel.numberOfLines = 0
                 downloadResultLabel.textColor = .systemRed
                 downloadProgress.setProgress(0.0, animated: false)
             case .completed:
