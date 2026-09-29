@@ -50,12 +50,29 @@ final class DiagnosticsController: UITableViewController {
         return statusLabel
     }()
     
+    private var memPoolLabel: UILabel = {
+        let statusLabel = UILabel()
+        statusLabel.text = "Tap Refresh to download Memory Pool info"
+        statusLabel.textColor = .secondary
+        statusLabel.lineBreakMode = .byWordWrapping
+        statusLabel.numberOfLines = 0
+        statusLabel.translatesAutoresizingMaskIntoConstraints = false
+        return statusLabel
+    }()
+    
     // MARK: @objc
     
     @objc func refreshTapped(_ sender: UIResponder) {
         guard let baseViewController = parent as? BaseViewController else { return }
         baseViewController.onDeviceStatusReady { [unowned self] in
             requestStats()
+        }
+    }
+    
+    @objc func memPoolTapped(_ sender: UIResponder) {
+        guard let baseViewController = parent as? BaseViewController else { return }
+        baseViewController.onDeviceStatusReady { [unowned self] in
+            requestMemoryPool()
         }
     }
     
@@ -101,12 +118,13 @@ final class DiagnosticsController: UITableViewController {
         osManager.logDelegate = UIApplication.shared.delegate as? McuMgrLogDelegate
     }
     
-    // MARK: UITableView
+    // MARK: Section
     
     enum Section: Int, RawRepresentable, CaseIterable {
         case deviceStatus
         case observability
         case stats
+        case memPool
         
         var title: String {
             switch self {
@@ -116,9 +134,13 @@ final class DiagnosticsController: UITableViewController {
                 return "Observability"
             case .stats:
                 return "Stats"
+            case .memPool:
+                return "Memory Pools"
             }
         }
     }
+    
+    // MARK: ObservabilitySectionRow
     
     enum ObservabilitySectionRow: Int, RawRepresentable, CaseIterable {
         case status
@@ -127,8 +149,17 @@ final class DiagnosticsController: UITableViewController {
         case learnMoreUpdate
     }
     
+    // MARK: StatsSectionRow
+    
     enum StatsSectionRow: Int, RawRepresentable, CaseIterable {
         case stats
+        case refreshButton
+    }
+    
+    // MARK: MemPoolSectionRow
+    
+    enum MemPoolSectionRow: Int, RawRepresentable, CaseIterable {
+        case memPool
         case refreshButton
     }
     
@@ -149,6 +180,8 @@ final class DiagnosticsController: UITableViewController {
             return ObservabilitySectionRow.allCases.count
         case .stats:
             return StatsSectionRow.allCases.count
+        case .memPool:
+            return MemPoolSectionRow.allCases.count
         default:
             return 0
         }
@@ -164,6 +197,8 @@ final class DiagnosticsController: UITableViewController {
             return observabilitySectionCell(for: ObservabilitySectionRow(rawValue: indexPath.row))
         case .stats:
             return statsSectionCell(for: StatsSectionRow(rawValue: indexPath.row))
+        case .memPool:
+            return memPoolSectionCell(for: MemPoolSectionRow(rawValue: indexPath.row))
         default:
             return UITableViewCell()
         }
@@ -301,6 +336,51 @@ final class DiagnosticsController: UITableViewController {
         }
     }
     
+    // MARK: memPoolSectionCell(for:)
+    
+    private func memPoolSectionCell(for row: MemPoolSectionRow?) -> UITableViewCell {
+        switch row {
+        case .memPool:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: "memPool")
+            cell.selectionStyle = .none
+            cell.textLabel?.numberOfLines = 0
+            
+            if memPoolLabel.superview != nil {
+                memPoolLabel.removeFromSuperview()
+            }
+            
+            cell.contentView.addSubview(memPoolLabel)
+            NSLayoutConstraint.activate([
+                memPoolLabel.topAnchor.constraint(equalTo: cell.contentView.safeAreaLayoutGuide.topAnchor, constant: 8.0),
+                memPoolLabel.leadingAnchor.constraint(equalTo: cell.contentView.safeAreaLayoutGuide.leadingAnchor, constant: 14.0),
+                memPoolLabel.trailingAnchor.constraint(equalTo: cell.contentView.safeAreaLayoutGuide.trailingAnchor, constant: -14.0),
+                memPoolLabel.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -8.0)
+            ])
+            return cell
+        case .refreshButton:
+            let cell = UITableViewCell(style: .default, reuseIdentifier: "memPoolRefresh")
+            cell.selectionStyle = .none
+            
+            let refreshButton = UIButton()
+            refreshButton.setTitle("Refresh", for: .normal)
+            refreshButton.setTitleColor(.nordic, for: .normal)
+            refreshButton.addTarget(self, action: #selector(memPoolTapped), for: .touchUpInside)
+            refreshButton.titleLabel?.font = .preferredFont(forTextStyle: .callout)
+            refreshButton.translatesAutoresizingMaskIntoConstraints = false
+            cell.contentView.addSubview(refreshButton)
+            
+            NSLayoutConstraint.activate([
+                refreshButton.topAnchor.constraint(equalTo: cell.contentView.safeAreaLayoutGuide.topAnchor, constant: 8.0),
+                refreshButton.trailingAnchor.constraint(equalTo: cell.contentView.safeAreaLayoutGuide.trailingAnchor, constant: -14.0),
+                
+                cell.contentView.bottomAnchor.constraint(equalTo: refreshButton.bottomAnchor, constant: 8.0)
+            ])
+            return cell
+        case .none:
+            return UITableViewCell()
+        }
+    }
+    
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return UITableView.automaticDimension
     }
@@ -318,11 +398,6 @@ private extension DiagnosticsController {
                 statsLabel.text = ""
                 statsLabel.textColor = .primary
                 var output: String = ""
-                
-                let mempoolResponse = try? await osManager.memoryPoolStats()
-                if let mpoolString = memoryPoolResponseString(mempoolResponse) {
-                    output += mpoolString
-                }
                 
                 let response = try await statsManager.list()
                 guard let modules = response.names, !modules.isEmpty else {
@@ -349,32 +424,6 @@ private extension DiagnosticsController {
         }
     }
     
-    // MARK: memoryPoolResponseString(_:)
-    
-    func memoryPoolResponseString(_ mempoolResponse: McuMgrMemoryPoolStatsResponse?) -> String? {
-        guard let mpools = mempoolResponse?.mpools else { return nil }
-        var output = ""
-        for key in mpools.keys.sorted(by: <) {
-            if let mpool = mpools[key] {
-                output += "Memory Pool \(key):\n"
-                if let blockSize = mpool.blockSize {
-                    output += "• Block Size: \(blockSize)\n"
-                }
-                if let numBlocks = mpool.numBlocks {
-                    output += "• Number of Blocks: \(numBlocks)\n"
-                }
-                if let numFree = mpool.numFree {
-                    output += "• Number of Free Blocks: \(numFree)\n"
-                }
-                if let minFree = mpool.minFree {
-                    output += "• Minimum Number of Free Blocks: \(minFree)\n"
-                }
-                output += "\n"
-            }
-        }
-        return output
-    }
-    
     // MARK: moduleStatsString(_:stats:error:)
     
     nonisolated
@@ -398,6 +447,56 @@ private extension DiagnosticsController {
         
         resultString += "\n"
         return resultString
+    }
+    
+    // MARK: requestMemoryPool
+    
+    func requestMemoryPool() {
+        Task { @MainActor in
+            do {
+                memPoolLabel.text = ""
+                memPoolLabel.textColor = .primary
+                
+                let mempoolResponse = try await osManager.memoryPoolStats()
+                guard let mpoolString = memoryPoolResponseString(mempoolResponse) else {
+                    throw OSManagerError.queryNoValidResponse
+                }
+                
+                memPoolLabel.text = mpoolString
+                tableView.reloadSections(IndexSet([Section.memPool.rawValue]), with: .none)
+            } catch {
+                memPoolLabel.textColor = .systemRed
+                memPoolLabel.text = error.localizedDescription
+                tableView.reloadSections(IndexSet([Section.memPool.rawValue]), with: .none)
+            }
+        }
+    }
+    
+    // MARK: memoryPoolResponseString(_:)
+    
+    nonisolated
+    func memoryPoolResponseString(_ mempoolResponse: McuMgrMemoryPoolStatsResponse?) -> String? {
+        guard let mpools = mempoolResponse?.mpools else { return nil }
+        var output = ""
+        for key in mpools.keys.sorted(by: <) {
+            if let mpool = mpools[key] {
+                output += "Pool \(key):\n"
+                if let blockSize = mpool.blockSize {
+                    output += "• Block Size: \(blockSize)\n"
+                }
+                if let numBlocks = mpool.numBlocks {
+                    output += "• Number of Blocks: \(numBlocks)\n"
+                }
+                if let numFree = mpool.numFree {
+                    output += "• Number of Free Blocks: \(numFree)\n"
+                }
+                if let minFree = mpool.minFree {
+                    output += "• Minimum Number of Free Blocks: \(minFree)\n"
+                }
+                output += "\n"
+            }
+        }
+        return output
     }
     
     // MARK: showObservabilityActivityIndicator(_:)
