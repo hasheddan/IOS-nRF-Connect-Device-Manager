@@ -751,7 +751,7 @@ public enum ImageManagerError: UInt64, Error, LocalizedError {
         case .tlvInvalidSize:
             return "Slot image has an invalid TLV size"
         case .hashNotFound:
-            return "Slot image has no hash TLV"
+            return "Hash not found"
         case .fullSlots:
             return "There is no free slot to place the image"
         case .flashOpenFailed:

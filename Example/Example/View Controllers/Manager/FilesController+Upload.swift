@@ -68,6 +68,7 @@ extension FilesController {
                 cell.textLabel?.text = "Destination: \(uploadDestination ?? "N/A")"
             case .uploadState:
                 uploadStatus = cell.textLabel
+                cell.textLabel?.numberOfLines = 1
                 
                 switch uploadState {
                 case .selectFile:
@@ -91,6 +92,7 @@ extension FilesController {
                     cell.textLabel?.textColor = .systemRed
                 case .error(let error):
                     cell.textLabel?.text = "State: \(error.localizedDescription)"
+                    cell.textLabel?.numberOfLines = 0
                     cell.textLabel?.textColor = .systemRed
                 case .completed:
                     cell.textLabel?.text = "State: UPLOAD COMPLETE"
