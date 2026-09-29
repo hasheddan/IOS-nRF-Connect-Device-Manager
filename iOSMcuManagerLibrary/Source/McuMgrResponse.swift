@@ -374,10 +374,19 @@ public class McuMgrMemoryPoolStatsResponse: McuMgrResponse {
         
         public required init(cbor: CBOR?) throws {
             try super.init(cbor: cbor)
-            if case let CBOR.unsignedInt(blockSize)? = cbor?["blksiz"] {self.blockSize = blockSize}
-            if case let CBOR.unsignedInt(numBlocks)? = cbor?["nblks"] {self.numBlocks = numBlocks}
-            if case let CBOR.unsignedInt(numFree)? = cbor?["nfree"] {self.numFree = numFree}
-            if case let CBOR.unsignedInt(minFree)? = cbor?["min"] {self.minFree = minFree}
+            
+            if case let CBOR.unsignedInt(blockSize)? = cbor?["blksiz"] {
+                self.blockSize = blockSize
+            }
+            if case let CBOR.unsignedInt(numBlocks)? = cbor?["nblks"] {
+                self.numBlocks = numBlocks
+            }
+            if case let CBOR.unsignedInt(numFree)? = cbor?["nfree"] {
+                self.numFree = numFree
+            }
+            if case let CBOR.unsignedInt(minFree)? = cbor?["min"] {
+                self.minFree = minFree
+            }
         }
     }
 }
