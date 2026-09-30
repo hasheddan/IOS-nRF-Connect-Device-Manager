@@ -39,19 +39,34 @@ struct ObservabilityState: Codable {
     }
     
     @discardableResult
-    mutating func update(_ chunk: ObservabilityChunk, from identifier: UUID, to status: ObservabilityChunk.Status) -> ObservabilityChunk {
-        guard let index = pendingUploads[identifier]?.firstIndex(of: chunk) else {
-            return chunk
+    mutating func update(_ chunks: [ObservabilityChunk], from identifier: UUID, to status: ObservabilityChunk.Status) -> [ObservabilityChunk] {
+        var modifiedChunks: [ObservabilityChunk] = []
+        for chunk in chunks {
+            guard let i = pendingUploads[identifier]?.firstIndex(of: chunk) else {
+                #if DEBUG
+                print("Unable to find Chunk \(chunk.sequenceNumber)")
+                #endif
+                continue
+            }
+            
+            pendingUploads[identifier]?[i].status = status
+            if let item = pendingUploads[identifier]?[i] {
+                modifiedChunks.append(item)
+            }
         }
-        pendingUploads[identifier]?[index].status = status
-        return pendingUploads[identifier]?[index] ?? chunk
+        return modifiedChunks
     }
     
-    mutating func clear(_ chunk: ObservabilityChunk, from identifier: UUID) {
-        guard let index = pendingUploads[identifier]?.firstIndex(of: chunk) else {
-            return
+    mutating func clear(_ chunks: [ObservabilityChunk], from identifier: UUID) {
+        for chunk in chunks {
+            guard let i = pendingUploads[identifier]?.firstIndex(of: chunk) else {
+                #if DEBUG
+                print("Unable to find Chunk \(chunk.sequenceNumber)")
+                #endif
+                continue
+            }
+            pendingUploads[identifier]?.remove(at: i)
         }
-        pendingUploads[identifier]?.remove(at: index)
         enqueueWriteToDisk()
     }
     
