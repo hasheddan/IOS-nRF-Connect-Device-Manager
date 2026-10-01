@@ -68,8 +68,8 @@ final class ObservabilityStatusManager {
                     case .connected:
                         // Reset since on Observability Connection we'll get a report of pending chunks.
                         statusInfo = ObservabilityStatusInfo(status: .receivedEvent(.connected))
-                    case .updatedChunk(let chunk):
-                        statusInfo?.processChunk(chunk)
+                    case .updatedChunks(let chunks):
+                        statusInfo?.processChunks(chunks)
                         fallthrough // updateStatus as well
                     default:
                         statusInfo?.updatedStatus(.receivedEvent(event.event))
@@ -154,16 +154,18 @@ struct ObservabilityStatusInfo {
         self.status = status
     }
     
-    // MARK: processChunk()
+    // MARK: processChunks()
     
-    mutating func processChunk(_ chunk: ObservabilityChunk) {
-        switch chunk.status {
-        case .pendingUpload:
-            pending(chunk)
-        case .success:
-            uploaded(chunk)
-        default:
-            break
+    mutating func processChunks(_ chunks: [ObservabilityChunk]) {
+        for chunk in chunks {
+            switch chunk.status {
+            case .pendingUpload:
+                pending(chunk)
+            case .success:
+                uploaded(chunk)
+            default:
+                break
+            }
         }
     }
     

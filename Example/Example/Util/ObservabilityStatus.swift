@@ -37,7 +37,7 @@ enum ObservabilityStatus: CustomStringConvertible {
                 return "AUTHENTICATED"
             case .unauthorized:
                 return "UNAUTHORIZED"
-            case .updatedChunk:
+            case .updatedChunks:
                 return "STREAMING"
             }
         case .connectionClosed:

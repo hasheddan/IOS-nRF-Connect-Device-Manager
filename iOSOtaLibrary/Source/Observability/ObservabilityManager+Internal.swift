@@ -138,9 +138,7 @@ internal extension ObservabilityManager {
         
         log("Restored \(pendingChunks.count) Pending Chunks from \(identifier)")
         let pendingUploads = state.update(pendingChunks, from: identifier, to: .pendingUpload)
-        for chunk in pendingUploads {
-            deviceContinuations[identifier]?.yield((identifier, .updatedChunk(chunk)))
-        }
+        deviceContinuations[identifier]?.yield((identifier, .updatedChunks(pendingUploads)))
     }
     
     // MARK: listenForNewChunks
@@ -212,9 +210,7 @@ fileprivate extension ObservabilityManager {
     func received(chunks: [ObservabilityChunk], from identifier: UUID) {
         state.add(chunks, for: identifier)
         logChunksUpdate("Received Chunks with", on: chunks)
-        for chunk in chunks {
-            deviceContinuations[identifier]?.yield((identifier, .updatedChunk(chunk)))
-        }
+        deviceContinuations[identifier]?.yield((identifier, .updatedChunks(chunks)))
     }
     
     // MARK: upload
@@ -223,9 +219,7 @@ fileprivate extension ObservabilityManager {
         guard deviceCancellables[identifier] != nil else { return }
         
         let uploadingChunks: [ObservabilityChunk] = state.update(chunks, from: identifier, to: .uploading)
-        for chunk in uploadingChunks {
-            deviceContinuations[identifier]?.yield((identifier, .updatedChunk(chunk)))
-        }
+        deviceContinuations[identifier]?.yield((identifier, .updatedChunks(uploadingChunks)))
         logChunksUpdate("Uploading Chunks with", on: uploadingChunks)
         
         network.perform(HTTPRequest.post(chunks: uploadingChunks, with: auth))
@@ -243,10 +237,8 @@ fileprivate extension ObservabilityManager {
                 
                 let uploadedChunks = state.update(uploadingChunks, from: identifier, to: .success)
                 logChunksUpdate("Uploaded Chunks with", on: uploadingChunks)
-                for uploadedChunk in uploadedChunks {
-                    deviceContinuations[identifier]?.yield((identifier, .updatedChunk(uploadedChunk)))
-                    state.clear([uploadedChunk], from: identifier)
-                }
+                deviceContinuations[identifier]?.yield((identifier, .updatedChunks(uploadedChunks)))
+                state.clear(uploadedChunks, from: identifier)
                 
                 guard let nextUpload = state.nextChunks(for: identifier) else {
                     networkBusy = false
@@ -261,9 +253,7 @@ fileprivate extension ObservabilityManager {
     
     func handleError(_ error: some Error, for uploadingChunks: [ObservabilityChunk], from identifier: UUID, with auth: ObservabilityAuth) {
         let errorChunks = state.update(uploadingChunks, from: identifier, to: .uploadError)
-        for errorChunk in errorChunks {
-            deviceContinuations[identifier]?.yield((identifier, .updatedChunk(errorChunk)))
-        }
+        deviceContinuations[identifier]?.yield((identifier, .updatedChunks(errorChunks)))
         networkBusy = false
         if let urlError = error as? URLError,
            let statusCode = urlError.errorUserInfo["httpStatusCode"] as? Int, statusCode == 403 {
