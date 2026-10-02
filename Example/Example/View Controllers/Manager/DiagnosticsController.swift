@@ -572,7 +572,12 @@ extension DiagnosticsController: DeviceStatusManager.Delegate {
                     observabilityButton.setTitle("Retry Network", for: .normal)
                 }
                 showObservabilityActivityIndicator(true)
-            case .updatedChunk(let chunk):
+            case .updatedChunks(let chunks):
+                guard let chunk = chunks.last else {
+                    observabilitySectionStatusLabel.text = "Status: Library Error - Empty Chunks Update received"
+                    observabilitySectionStatusLabel.textColor = .systemRed
+                    break
+                }
                 switch chunk.status {
                 case .pendingUpload:
                     observabilitySectionStatusLabel.text = "Status: Pending Upload"
