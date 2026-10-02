@@ -410,11 +410,18 @@ public class FirmwareUpgradeManager: FirmwareUpgradeController, ConnectionObserv
         }
         self.log(msg: "Setting SAR Buffer Size to \(bufferSize) bytes.", atLevel: .verbose)
         self.configuration.reassemblyBufferSize = bufferSize
+        
         let mtu: Int = self.imageManager.transport.mtu
         if bufferSize < mtu {
             self.log(msg: "Parameters SAR Buffer Size (\(bufferSize)) is smaller than negotiated MTU (\(mtu)). Lowering MTU to match.", atLevel: .warning)
             try? self.setUploadMtu(mtu: Int(bufferSize))
         }
+        
+        if self.configuration.pipelineDepth > max(1, bufferCount - 1) {
+            self.log(msg: "Parameters SAR Buffer Count (\(bufferCount)) is smaller than configuration value of (\(self.configuration.pipelineDepth + 1)), this will severely affect DFU transfer. Lowering configuration buffer count to match.", atLevel: .warning)
+            self.configuration.pipelineDepth = Int(max(1, bufferCount - 1))
+        }
+        
         self.bootloaderInfo() // Continue to Bootloader Mode.
     }
     
