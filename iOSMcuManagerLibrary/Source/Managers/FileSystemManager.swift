@@ -802,6 +802,7 @@ public enum FileSystemManagerError: UInt64, Error, LocalizedError {
     case mountingPointNotFound = 14
     case readOnlyFilesystem = 15
     case emptyFile = 16
+    case fileClosedFailed = 17
     case operationAlreadyInProgress = 2029
     
     public var errorDescription: String? {
@@ -840,6 +841,8 @@ public enum FileSystemManagerError: UInt64, Error, LocalizedError {
             return "Specified mount point only supports read-only operations"
         case .emptyFile:
             return "Requested operation cannot be performed due to file being empty with no contents"
+        case .fileClosedFailed:
+            return "Error occurred whilst attempting to close a file"
         case .operationAlreadyInProgress:
             return "There's already an operation in progress"
         }
