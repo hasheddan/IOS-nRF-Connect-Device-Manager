@@ -517,7 +517,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.14.10;
+				MARKETING_VERSION = 1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nordicsemi.nrfconnect.devicemanager;
 				PRODUCT_NAME = "nRF Connect Device Manager";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -541,7 +541,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.14.10;
+				MARKETING_VERSION = 1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.nordicsemi.nrfconnect.devicemanager;
 				PRODUCT_NAME = "nRF Connect Device Manager";
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
