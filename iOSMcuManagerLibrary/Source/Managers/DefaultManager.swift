@@ -244,6 +244,7 @@ public enum OSManagerError: UInt64, Error, LocalizedError {
     case rtcNotSet = 4
     case rtcCommandFailed = 5
     case queryNoValidResponse = 6
+    case heapStatsFetchFailed = 7
     
     public var errorDescription: String? {
         switch self {
@@ -261,6 +262,8 @@ public enum OSManagerError: UInt64, Error, LocalizedError {
             return "RTC Command Failed"
         case .queryNoValidResponse:
             return "Query was recognized, but no valid response value is available"
+        case .heapStatsFetchFailed:
+            return "Heap Statistics Fetch (Query) Failed"
         }
     }
 }

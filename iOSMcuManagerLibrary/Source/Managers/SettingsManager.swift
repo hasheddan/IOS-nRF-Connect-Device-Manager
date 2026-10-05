@@ -123,6 +123,7 @@ public enum SettingsManagerError: UInt64, Error, LocalizedError {
     case rootKeyNotFound = 5
     case writeNotSupported = 6
     case deleteNotSupported = 7
+    case saveNotSupported = 8
     
     public var errorDescription: String? {
         switch self {
@@ -142,6 +143,8 @@ public enum SettingsManagerError: UInt64, Error, LocalizedError {
             return "Provided key name does not support write operation"
         case .deleteNotSupported:
             return "Provided key name does not support delete operation"
+        case .saveNotSupported:
+            return "The provided key cannot be saved before the value is longer than the size of the largest value that can safely be read (CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE)"
         }
     }
 }
