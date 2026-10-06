@@ -1014,7 +1014,7 @@ public class FirmwareUpgradeManager: FirmwareUpgradeController, ConnectionObserv
         transport.removeObserver(self)
         
         // Disregard connected state.
-        guard state == .disconnected else { return }
+        guard case let .disconnected = state else { return }
         
         switch self.state { // FirmwareUpgradeState, not McuMgrTransportState
         case .resetIntoFirmwareLoader:

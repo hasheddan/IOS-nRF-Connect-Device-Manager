@@ -25,7 +25,8 @@ public enum McuMgrScheme {
 // MARK: - McuMgrTransportState
 
 public enum McuMgrTransportState {
-    case connected, disconnected
+    case connected
+    case disconnected(expected: Bool)
 }
 
 // MARK: - ConnectionObserver

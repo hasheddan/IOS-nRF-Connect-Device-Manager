@@ -30,7 +30,7 @@ extension McuMgrBleTransport: CBCentralManagerDelegate {
     }
     
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
-        guard self.identifier == peripheral.identifier else { return }
+        guard identifier == peripheral.identifier else { return }
         
         log(msg: "Peripheral connected", atLevel: .info)
         state = .initializing
@@ -41,18 +41,23 @@ extension McuMgrBleTransport: CBCentralManagerDelegate {
     }
     
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        guard self.identifier == peripheral.identifier else {
-            return
+        guard identifier == peripheral.identifier else { return }
+        
+        let peripheralDisconnectedWhilstWriting = writeState.hasPendingWrites()
+        if peripheralDisconnectedWhilstWriting {
+            log(msg: "Peripheral disconnected with pending writes to be sent.", atLevel: .warning)
+        } else {
+            log(msg: "Peripheral disconnected normally.", atLevel: .info)
         }
-        log(msg: "Peripheral disconnected", atLevel: .info)
+        
         didDisconnect()
-        notifyStateChanged(.disconnected)
+        // Disconnection is expected if there are no pending writes in the buffer.
+        notifyStateChanged(.disconnected(expected: !peripheralDisconnectedWhilstWriting))
     }
     
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        guard self.identifier == peripheral.identifier else {
-            return
-        }
+        guard identifier == peripheral.identifier else { return }
+        
         log(msg: "Peripheral failed to connect", atLevel: .warning)
         connectionLock.open(McuMgrTransportError.connectionFailed)
     }

@@ -617,7 +617,7 @@ extension SuitManager: ConnectionObserver {
     
     public func transport(_ transport: McuMgrTransport, didChangeStateTo state: McuMgrTransportState) {
         // Disregard other states.
-        guard state == .disconnected else { return }
+        guard case let .disconnected = state else { return }
         
         log(msg: "Device has disconnected.", atLevel: .info)
         transport.removeObserver(self)

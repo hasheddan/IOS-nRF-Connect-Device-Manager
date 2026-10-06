@@ -96,6 +96,12 @@ final class McuMgrBleTransportWriteState {
         }
     }
     
+    func hasPendingWrites() -> Bool {
+        lockingQueue.sync { [unowned self] in
+            return !state.keys.isEmpty
+        }
+    }
+    
     func onError(_ error: Error) {
         lockingQueue.async {
             self.state.forEach { _, value in
