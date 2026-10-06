@@ -525,12 +525,16 @@ extension McuMgrBleTransport: McuMgrTransport {
         
         switch result {
         case .failure(McuMgrTransportError.sendTimeout):
-            guard !robWriteBuffer.isInFlight(sequenceNumber) else {
-                writeLock.open(McuMgrTransportError.peripheralNotReadyForWriteWithoutResponse)
-                return .failure(McuMgrTransportError.peripheralNotReadyForWriteWithoutResponse)
+            // Make sure we're still connected before issuing a retry of any kind.
+            guard state == .connected else {
+                writeLock.open(McuMgrTransportError.disconnected)
+                return .failure(McuMgrTransportError.disconnected)
             }
-            writeLock.open(McuMgrTransportError.waitAndRetry)
-            return .failure(McuMgrTransportError.waitAndRetry)
+            
+            let error: McuMgrTransportError = robWriteBuffer.isInFlight(sequenceNumber)
+                ? .peripheralNotReadyForWriteWithoutResponse : .waitAndRetry
+            writeLock.open(error)
+            return .failure(error)
         case .failure(let error):
             writeLock.open(error)
             return .failure(error)
