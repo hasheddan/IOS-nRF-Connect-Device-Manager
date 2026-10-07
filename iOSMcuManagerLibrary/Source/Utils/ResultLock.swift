@@ -6,20 +6,32 @@
 
 import Foundation
 
+// MARK: - ResultLockKey
+
 public typealias ResultLockKey = String
+
+// MARK: - ResultLock
 
 public class ResultLock {
     
+    // MARK: Private
+    
     private var semaphore: DispatchSemaphore
+    
+    // MARK: Public Properties
     
     public var isOpen: Bool = false
     public var error: Error?
     public var key: ResultLockKey?
     
+    // MARK: init
+    
     public init(isOpen: Bool) {
         self.isOpen = isOpen
         self.semaphore = DispatchSemaphore(value: 0)
     }
+    
+    // MARK: block()
     
     /// Block the current thread until the condition is opened.
     ///
@@ -33,6 +45,8 @@ public class ResultLock {
         return .failure(error)
     }
     
+    // MARK: block(timeout:)
+    
     /// Block the current thread until the condition is opened or until timeout.
     ///
     /// If the condition is opened, return immediately.
@@ -45,13 +59,15 @@ public class ResultLock {
         }
         
         if dispatchResult == .timedOut {
-            return .failure(McuMgrTransportError.sendTimeout)
+            return .failure(ResultLockError.timeout)
         } else if let error = error {
             return .failure(error)
         } else {
             return .success(())
         }
     }
+    
+    // MARK: open(key:)
     
     /// Open the condition, and release all threads that are blocked
     /// only if the provided key is the same that closed it, or if no key was used to close it.
@@ -62,6 +78,8 @@ public class ResultLock {
         guard canOpen else { return }
         open()
     }
+    
+    // MARK: open(_:)
     
     /// Open the condition, and release all threads that are blocked.
     ///
@@ -77,11 +95,15 @@ public class ResultLock {
         objc_sync_exit(self)
     }
     
+    // MARK: close(key:)
+    
     /// Reset the condition to the closed state using the provided key.
     public func close(key: ResultLockKey) {
         self.key = key
         close()
     }
+    
+    // MARK: close
     
     /// Reset the condition to the closed state.
     public func close() {
@@ -91,4 +113,10 @@ public class ResultLock {
         isOpen = false
         objc_sync_exit(self)
     }
+}
+
+// MARK: - ResultLockError
+
+public enum ResultLockError: Error, Hashable {
+    case timeout
 }

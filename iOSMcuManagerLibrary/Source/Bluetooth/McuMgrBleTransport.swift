@@ -524,7 +524,7 @@ extension McuMgrBleTransport: McuMgrTransport {
         let result = writeLock.block(timeout: DispatchTime.now() + .seconds(timeoutInSeconds))
         
         switch result {
-        case .failure(McuMgrTransportError.sendTimeout):
+        case .failure(ResultLockError.timeout):
             // Make sure we're still connected before issuing a retry of any kind.
             guard state == .connected else {
                 writeLock.open(McuMgrTransportError.disconnected)
